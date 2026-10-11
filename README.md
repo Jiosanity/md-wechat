@@ -2,7 +2,7 @@
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![构建](https://github.com/laogou717/md-wechat/actions/workflows/ci.yml/badge.svg)](https://github.com/laogou717/md-wechat/actions/workflows/ci.yml)
+[![构建](https://github.com/Jiosanity/md-wechat/actions/workflows/ci.yml/badge.svg)](https://github.com/Jiosanity/md-wechat/actions/workflows/ci.yml)
 
 面向公众号写作者的 Markdown 排版工具：左边写 Markdown，右边实时预览公众号效果，一键复制富文本，直接粘贴进公众号后台，样式不丢失。
 
@@ -34,13 +34,20 @@
 
 ### Docker 部署（推荐用于服务器 / NAS）
 
-需要安装 Docker 和 Docker Compose。在项目目录执行：
+提供 GHCR 镜像 `ghcr.io/jiosanity/md-wechat:latest`，支持 `linux/amd64` 和 `linux/arm64`。无需下载源码或在服务器上构建，安装 Docker 后直接运行：
 
 ```bash
-docker compose up -d --build
+docker run -d --name md-wechat --restart unless-stopped -p 8080:80 ghcr.io/jiosanity/md-wechat:latest
 ```
 
-启动后访问 `http://localhost:8080`；部署在服务器或 NAS 上时，将 `localhost` 换成对应的 IP 或域名。首次构建需要联网下载基础镜像与 npm 依赖，宿主机无需安装 Node.js。
+启动后访问 `http://localhost:8080`；部署在服务器或 NAS 上时，将 `localhost` 换成对应的 IP 或域名。宿主机无需安装 Node.js。
+
+使用 Docker Compose 时，将仓库中的 `compose.yaml` 保存到部署目录，然后执行：
+
+```bash
+docker compose pull
+docker compose up -d
+```
 
 默认端口为 `8080`，可在项目目录创建 `.env` 文件修改：
 
@@ -48,27 +55,39 @@ docker compose up -d --build
 PORT=8088
 ```
 
-修改后再次执行 `docker compose up -d --build`，访问 `http://localhost:8088`。
+修改后再次执行 `docker compose up -d`，访问 `http://localhost:8088`。
 
 常用管理命令：
 
 ```bash
 docker compose logs -f           # 查看日志
 docker compose down              # 停止并移除容器
-git pull                         # 获取仓库更新
-docker compose up -d --build      # 构建并启动更新后的版本
+docker compose pull              # 获取最新镜像
+docker compose up -d             # 使用新镜像启动
 ```
 
-也可以不用 Compose，直接构建和运行：
+如果需要从源码自行构建，在项目目录执行：
 
 ```bash
-docker build -t md-wechat .
-docker run -d --name md-wechat --restart unless-stopped -p 8080:80 md-wechat
+docker compose -f compose.build.yaml up -d --build
 ```
 
 镜像使用多阶段构建：Node.js 构建静态文件，Nginx 提供网页服务。文章、图片和设置仍保存在各使用者浏览器中，无需配置数据库或数据卷；删除容器不会删除浏览器里的文章。更换域名、协议或访问端口后，浏览器会将其视为不同站点，旧文章不会自动迁移，请提前导出备份。
 
 公网部署时，请通过现有反向代理配置 HTTPS，再转发到此服务。浏览器的现代剪贴板 API 需要安全上下文，HTTPS 有助于可靠使用「复制富文本」；本机使用 `http://localhost:8080` 即可。
+
+#### 镜像自动发布
+
+GitHub Actions 会先运行测试与生产构建，再发布镜像到当前仓库对应的 GHCR 地址（仓库名自动转为小写），无需额外配置 Token：
+
+- 推送到 `main`：更新 `latest`，同时生成 `sha-<提交短哈希>` 标签。
+- 推送 `v*` 标签（例如 `v1.0.0`）：发布同名镜像标签和提交标签，不覆盖 `latest`。
+- 在 Actions 页面手动运行工作流：选择 `main` 可重新发布 `latest`。
+- Pull Request 只执行测试和构建，不发布镜像。
+
+首次使用 fork 时，如 Actions 尚未启用，请到仓库 **Actions** 页面启用工作流。首次发布后，GHCR 包默认是私有的；如需免登录拉取，在个人主页 **Packages → md-wechat → Package settings → Change visibility** 中设为 **Public**。镜像发布成功并设为公开后，上面的拉取命令才能免登录使用。
+
+如保持私有，在部署机器上先执行 `docker login ghcr.io -u Jiosanity`，密码使用带 `read:packages` 权限的 Personal Access Token (classic)。固定版本部署可将 `latest` 改成已发布的版本标签或提交标签。
 
 ### 方式一：一键启动（推荐给小白）
 

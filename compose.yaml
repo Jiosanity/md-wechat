@@ -1,6 +1,6 @@
 services:
   md-wechat:
-    build: .
+    image: ghcr.io/jiosanity/md-wechat:latest
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped
