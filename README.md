@@ -32,6 +32,44 @@
 
 ## 安装与启动
 
+### Docker 部署（推荐用于服务器 / NAS）
+
+需要安装 Docker 和 Docker Compose。在项目目录执行：
+
+```bash
+docker compose up -d --build
+```
+
+启动后访问 `http://localhost:8080`；部署在服务器或 NAS 上时，将 `localhost` 换成对应的 IP 或域名。首次构建需要联网下载基础镜像与 npm 依赖，宿主机无需安装 Node.js。
+
+默认端口为 `8080`，可在项目目录创建 `.env` 文件修改：
+
+```dotenv
+PORT=8088
+```
+
+修改后再次执行 `docker compose up -d --build`，访问 `http://localhost:8088`。
+
+常用管理命令：
+
+```bash
+docker compose logs -f           # 查看日志
+docker compose down              # 停止并移除容器
+git pull                         # 获取仓库更新
+docker compose up -d --build      # 构建并启动更新后的版本
+```
+
+也可以不用 Compose，直接构建和运行：
+
+```bash
+docker build -t md-wechat .
+docker run -d --name md-wechat --restart unless-stopped -p 8080:80 md-wechat
+```
+
+镜像使用多阶段构建：Node.js 构建静态文件，Nginx 提供网页服务。文章、图片和设置仍保存在各使用者浏览器中，无需配置数据库或数据卷；删除容器不会删除浏览器里的文章。更换域名、协议或访问端口后，浏览器会将其视为不同站点，旧文章不会自动迁移，请提前导出备份。
+
+公网部署时，请通过现有反向代理配置 HTTPS，再转发到此服务。浏览器的现代剪贴板 API 需要安全上下文，HTTPS 有助于可靠使用「复制富文本」；本机使用 `http://localhost:8080` 即可。
+
 ### 方式一：一键启动（推荐给小白）
 
 - **macOS**：双击 `start.command`（首次如提示无法打开，在文件上右键 → 打开）

@@ -1,0 +1,12 @@
+.git
+.github
+.agents
+.codex
+node_modules
+dist
+.node-runtime
+.env
+.env.*
+.DS_Store
+npm-debug.log*
+*.mov
